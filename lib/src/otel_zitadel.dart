@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_zitadel_suppression.dart';
 
@@ -54,51 +53,64 @@ Future<T> tracedZitadel<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_zitadel');
   final span = t.startSpan('zitadel $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'zitadel');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'zitadel')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.instance != null) {
-        span.setStringAttribute('zitadel.instance', res.instance!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('zitadel.instance', res.instance!)]));
       }
       if (res.organization != null) {
-        span.setStringAttribute('zitadel.organization', res.organization!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('zitadel.organization', res.organization!)]));
       }
       if (res.project != null) {
-        span.setStringAttribute('zitadel.project', res.project!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('zitadel.project', res.project!)]));
       }
       if (res.userId != null) {
-        span.setStringAttribute('user.id', res.userId!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('user.id', res.userId!)]));
       }
       if (res.username != null) {
-        span.setStringAttribute('user.name', res.username!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('user.name', res.username!)]));
       }
       if (res.email != null) {
-        span.setStringAttribute('user.email', res.email!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('user.email', res.email!)]));
       }
       if (res.role != null) {
-        span.setStringAttribute('zitadel.role', res.role!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('zitadel.role', res.role!)]));
       }
       if (res.action != null) {
-        span.setStringAttribute('zitadel.action', res.action!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('zitadel.action', res.action!)]));
       }
       if (res.eventType != null) {
-        span.setStringAttribute('zitadel.event.type', res.eventType!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('zitadel.event.type', res.eventType!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('zitadel.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('zitadel.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'zitadel.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'zitadel.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
