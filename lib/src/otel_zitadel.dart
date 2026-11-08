@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_zitadel_suppression.dart';
 
 class ZitadelResult {
+  /// Creates a result.
   const ZitadelResult({
     this.instance,
     this.organization,
@@ -35,8 +36,13 @@ class ZitadelResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class ZitadelCallResult<T> {
+  /// Creates a call result.
   const ZitadelCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final ZitadelResult? result;
 }
@@ -44,70 +50,72 @@ class ZitadelCallResult<T> {
 Future<T> tracedZitadel<T>({
   required String operation,
   required Future<ZitadelCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (zitadelInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_zitadel');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_zitadel');
   final span = t.startSpan('zitadel $operation', kind: SpanKind.client);
   try {
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'zitadel')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.system', 'zitadel')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.instance != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('zitadel.instance', res.instance!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('zitadel.instance', res.instance!)]));
       }
       if (res.organization != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('zitadel.organization', res.organization!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('zitadel.organization', res.organization!)
+        ]));
       }
       if (res.project != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('zitadel.project', res.project!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('zitadel.project', res.project!)]));
       }
       if (res.userId != null) {
-        span.addAttributes(
-            OTel.attributes([OTel.attributeString('user.id', res.userId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('user.id', res.userId!)]));
       }
       if (res.username != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('user.name', res.username!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('user.name', res.username!)]));
       }
       if (res.email != null) {
-        span.addAttributes(
-            OTel.attributes([OTel.attributeString('user.email', res.email!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('user.email', res.email!)]));
       }
       if (res.role != null) {
-        span.addAttributes(
-            OTel.attributes([OTel.attributeString('zitadel.role', res.role!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('zitadel.role', res.role!)]));
       }
       if (res.action != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('zitadel.action', res.action!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('zitadel.action', res.action!)]));
       }
       if (res.eventType != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('zitadel.event.type', res.eventType!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('zitadel.event.type', res.eventType!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('zitadel.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('zitadel.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'zitadel.error',
           )
         ]));
